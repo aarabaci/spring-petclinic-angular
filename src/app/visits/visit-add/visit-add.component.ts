@@ -20,7 +20,7 @@
  * @author Vitaliy Fedoriv
  */
 
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {Visit} from '../visit';
 import {VisitService} from '../visit.service';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -28,6 +28,8 @@ import {PetService} from '../../pets/pet.service';
 import {Pet} from '../../pets/pet';
 import {PetType} from '../../pettypes/pettype';
 import {Owner} from '../../owners/owner';
+import {Vet} from '../../vets/vet';
+import {VetService} from '../../vets/vet.service';
 
 import * as moment from 'moment';
 
@@ -36,26 +38,47 @@ import * as moment from 'moment';
   templateUrl: './visit-add.component.html',
   styleUrls: ['./visit-add.component.css']
 })
-export class VisitAddComponent implements OnInit {
 
+export class VisitAddComponent implements OnInit {
   visit: Visit;
+  @Input()currentVet: Vet;
   currentPet: Pet;
   currentOwner: Owner;
   currentPetType: PetType;
+  vetArray: Vet[];
+  //vetName: string;
   addedSuccess = false;
   errorMessage: string;
 
-  constructor(private visitService: VisitService, private petService: PetService, private router: Router, private route: ActivatedRoute) {
+  constructor(private visitService: VisitService, private petService: PetService,
+              private router: Router,private vetService: VetService, private route: ActivatedRoute) {
     this.visit = {} as Visit;
     this.currentPet = {} as Pet;
     this.currentOwner = {} as Owner;
     this.currentPetType = {} as PetType;
+    this.currentVet = {} as Vet;
+    this.vetArray = [];
 
   }
 
+
   ngOnInit() {
     console.log(this.route.parent);
+    const vetId = this.route.snapshot.params.id;
     const petId = this.route.snapshot.params.id;
+
+    this.vetService.getVets().subscribe(
+    vetArray2 => this.vetArray = vetArray2,
+    error => this.errorMessage = error as any);
+
+
+    //  this.vetService.getVetById(vetId).subscribe(
+    //    response => {
+    //      this.currentVet = response;
+    //      this.visit.vet = this.currentVet;
+    //    },
+    //    error => this.errorMessage = error as any);
+
     this.petService.getPetById(petId).subscribe(
       response => {
         this.currentPet = response;
@@ -70,9 +93,12 @@ export class VisitAddComponent implements OnInit {
     visit.id = null;
     const that = this;
 
+    // visit.vets=[];
+    // if (this.currentVet.id !== undefined) {
+    //   visit.vets.push(this.currentVet);
+    // }
     // format output from datepicker to short string yyyy/mm/dd format
     visit.date = moment(visit.date).format('YYYY/MM/DD');
-
 
     this.visitService.addVisit(visit).subscribe(
       newVisit => {
@@ -80,8 +106,7 @@ export class VisitAddComponent implements OnInit {
         this.addedSuccess = true;
         that.gotoOwnerDetail();
       },
-      error => this.errorMessage = error as any
-    );
+      error => this.errorMessage = error as any)
   }
 
   gotoOwnerDetail() {
